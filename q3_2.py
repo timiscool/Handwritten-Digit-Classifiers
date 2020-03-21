@@ -10,6 +10,9 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 
+estimations = []
+lol = []
+
 def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
     svm = SVMClassifier(train_data, train_labels, test_data, test_labels)
@@ -61,6 +64,11 @@ class SVMClassifier(object):
         print("-"*5+"Fitting"+"-"*5)
         pipeline.fit(self.train_data, self.train_labels)
 
+        pred = pipeline.predict(self.test_data)
+        print("SVM think its: " + str(pred[0]))
+        print(len(pred))
+
+
         print("-"*5+"Testing"+"-"*5)
         score = pipeline.score(self.test_data, self.test_labels)
 
@@ -97,6 +105,10 @@ class MyAdaBoostClassifier:
 
         print("Predicting")
         pred = fitted_clf.predict(self.test_data)
+        print("ADA think its: " + str(pred[0]))
+        print(len(pred))
+
+
 
         print("Scoring")
         print(fitted_clf.score(self.test_data, self.test_labels))
@@ -133,7 +145,9 @@ class MYMLPClassifier():
 
         pred = mlp.predict(self.test_data)
 
-        print(pred[0])
+        print("NN think its: " + str(pred[0]))
+        print(len(pred))
+
 
         #print("training score : " + str(mlp.score(self.train_data, self.train_labels)))
 
