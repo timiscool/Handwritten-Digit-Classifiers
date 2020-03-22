@@ -15,6 +15,10 @@ from sklearn.metrics import recall_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
+from sklearn.multiclass import OneVsRestClassifier
+
+from sklearn import metrics
+
 
 
 
@@ -57,9 +61,7 @@ def main():
 
 
 class SVMClassifier(object):
-    '''
-    K Nearest Neighbor classifier
-    '''
+
 
     def __init__(self, train_data, train_labels, test_data, test_labels):
         self.train_data = train_data
@@ -83,10 +85,11 @@ class SVMClassifier(object):
 
     def get_metrics(self, predictions, true):
         acc = accuracy_score(true, predictions)
-        conf = confusion_matrix(true, predictions, labels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-        prec = precision_score(true, predictions, average='micro')
-
-        return acc, conf, prec
+        conf = confusion_matrix(true, predictions)
+        prec = precision_score(true, predictions, average='macro', labels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        recall = recall_score(true, predictions, average='macro')
+        roc = 0
+        return acc, conf, prec, recall, roc
 
     def get_results(self):
 
@@ -97,11 +100,14 @@ class SVMClassifier(object):
 
         pred = pipeline.predict(self.test_data)
 
-        acc, conf, prec = self.get_metrics(pred, self.test_labels)
-
-        print("{} \n {} \n {} \n".format(str(acc), str(conf), str(prec)))
+        acc, conf, prec, recall, roc = self.get_metrics(pred, self.test_labels)
 
 
+        print("Accuracy: " + str(acc))
+        print("Accuracy: " + str(prec))
+        print("Accuracy: " + str(recall))
+
+        print("Accuracy: " + str(roc))
 
 
 
@@ -136,9 +142,10 @@ class MyAdaBoostClassifier:
     def get_metrics(self, predictions, true):
         acc = accuracy_score(true, predictions)
         conf = confusion_matrix(true, predictions)
-        prec = precision_score(true, predictions, average='micro')
+        prec = precision_score(true, predictions, average='macro')
         recall = recall_score(true, predictions, average='macro')
         roc = 0
+
         return acc, conf, prec, recall, roc
 
     def get_results(self):
@@ -158,6 +165,8 @@ class MyAdaBoostClassifier:
         print("Precision score is: " + str(prec))
         print("Recall score is: " + str(recall))
         print("ROC score is: " + str(roc))
+
+        print(metrics.classification_report(pred, self.test_labels))
 
 
 
@@ -184,7 +193,7 @@ class MYMLPClassifier():
     def get_metrics(self, predictions, true):
         acc = accuracy_score(true, predictions)
         conf = confusion_matrix(true, predictions)
-        prec = precision_score(true, predictions, average='micro')
+        prec = precision_score(true, predictions, average='macro',labels=[0,1,2,3,4,5,6,7,8,9])
         recall = recall_score(true, predictions, average='macro')
         roc =0
 
@@ -205,9 +214,9 @@ class MYMLPClassifier():
 
 
 
-        mlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, alpha=1e-4,
+        mlp = OneVsRestClassifier(MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, alpha=1e-4,
                             solver='sgd', random_state=1,
-                            learning_rate_init=.1)
+                            learning_rate_init=.1))
 
 
         mlp.fit(self.train_data, self.train_labels)
