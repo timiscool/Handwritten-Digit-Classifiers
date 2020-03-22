@@ -7,23 +7,48 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.datasets import make_classification
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
 
 
 
-estimations = []
-lol = []
+
+from sklearn.metrics import roc_auc_score
+#confusing matrix is basic, not as good as ROC, sensitivity
+
+
+
+
+
 
 def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
-    svm = SVMClassifier(train_data, train_labels, test_data, test_labels)
-    print(svm.get_results())
+
+
+
+
+
 
     aclassifier = MyAdaBoostClassifier(train_data, train_labels, test_data, test_labels)
     aclassifier.get_results()
 
-    mlp = MYMLPClassifier(train_data, train_labels, test_data, test_labels)
 
-    mlp.initialize_pipeline()
+
+
+
+
+
+    #mlp = MYMLPClassifier(train_data, train_labels, test_data, test_labels)
+    #mlp.initialize_pipeline()
+
+    #svm = SVMClassifier(train_data, train_labels, test_data, test_labels)
+    #acc = svm.get_results()
 
 
 
@@ -56,6 +81,12 @@ class SVMClassifier(object):
 
         return grid
 
+    def get_metrics(self, predictions, true):
+        acc = accuracy_score(true, predictions)
+        conf = confusion_matrix(true, predictions, labels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        prec = precision_score(true, predictions, average='micro')
+
+        return acc, conf, prec
 
     def get_results(self):
 
@@ -65,16 +96,20 @@ class SVMClassifier(object):
         pipeline.fit(self.train_data, self.train_labels)
 
         pred = pipeline.predict(self.test_data)
-        print("SVM think its: " + str(pred[0]))
-        print(len(pred))
+
+        acc, conf, prec = self.get_metrics(pred, self.test_labels)
+
+        print("{} \n {} \n {} \n".format(str(acc), str(conf), str(prec)))
 
 
-        print("-"*5+"Testing"+"-"*5)
-        score = pipeline.score(self.test_data, self.test_labels)
 
-        print("-"*5+ "Returning score"+"-"*5)
 
-        return score
+
+        return acc
+
+
+
+
 
 
 
@@ -98,20 +133,37 @@ class MyAdaBoostClassifier:
         return clf
 
 
+    def get_metrics(self, predictions, true):
+        acc = accuracy_score(true, predictions)
+        conf = confusion_matrix(true, predictions)
+        prec = precision_score(true, predictions, average='micro')
+        recall = recall_score(true, predictions, average='macro')
+        roc = 0
+        return acc, conf, prec, recall, roc
+
     def get_results(self):
 
 
         fitted_clf = self.__initialize_pipeline()
 
         print("Predicting")
+        print(len(self.test_data))
         pred = fitted_clf.predict(self.test_data)
-        print("ADA think its: " + str(pred[0]))
-        print(len(pred))
-
-
-
         print("Scoring")
         print(fitted_clf.score(self.test_data, self.test_labels))
+
+        acc, conf, prec, recall, roc = self.get_metrics(pred, self.test_labels)
+
+        print("Accuracy score is: " + str(acc))
+        print("Precision score is: " + str(prec))
+        print("Recall score is: " + str(recall))
+        print("ROC score is: " + str(roc))
+
+
+
+
+
+
 
 
 
@@ -127,8 +179,25 @@ class MYMLPClassifier():
         self.test_labels = test_labels
 
 
+
+
+    def get_metrics(self, predictions, true):
+        acc = accuracy_score(true, predictions)
+        conf = confusion_matrix(true, predictions)
+        prec = precision_score(true, predictions, average='micro')
+        recall = recall_score(true, predictions, average='macro')
+        roc =0
+
+        return acc, conf, prec, recall, roc
+
+
+
+
     def initialize_pipeline(self):
 
+
+
+        print("Encoding")
 
         enc = OneHotEncoder(handle_unknown='ignore')
 
@@ -145,14 +214,21 @@ class MYMLPClassifier():
 
         pred = mlp.predict(self.test_data)
 
-        print("NN think its: " + str(pred[0]))
-        print(len(pred))
+        acc, conf, prec,rec,roc= self.get_metrics(self.test_labels, pred)
+
+        print("Accuracy score is: " + str(acc))
+        print("Precision score is: " + str(rec))
+        print("Recall score is: " + str(rec))
+        print("ROC score is: " + str(roc))
+
+
+
+
 
 
         #print("training score : " + str(mlp.score(self.train_data, self.train_labels)))
 
         #print("testing score: " + str(mlp.score(self.test_data, self.test_labels)))
-
 
 
 
