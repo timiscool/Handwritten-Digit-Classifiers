@@ -38,11 +38,17 @@ def main():
     #mlp = MYMLPClassifier(train_data, train_labels, test_data, test_labels)
     #mlp.initialize_pipeline()
     svm = SVMClassifier(train_data, train_labels, test_data, test_labels)
+    ada = MyAdaBoostClassifier(train_data, train_labels, test_data, test_labels)
+
     #svm.get_results()
     #svm.plot_roc_curve()
 
+    mlp = MYMLPClassifier(train_data, train_labels, test_data, test_labels)
+
     metrics = Metrics(test_data, test_labels)
-    metrics.get_results(svm.initialize_classifier(), "SVM")
+    #metrics.get_results(svm.initialize_classifier(), "SVM")
+   # metrics.get_results(ada.initialize_classifier(), "ADA")
+    metrics.get_results(mlp.initialize_classifier(), "MLP")
 
 
 
@@ -153,21 +159,13 @@ class MyAdaBoostClassifier:
         self.CLASSIFIER_TYPE = "AdaBoost"
 
 
-    def __initialize_pipeline(self):
+    def initialize_classifier(self):
         print("Creating classifier: " + self.CLASSIFIER_TYPE)
         clf = AdaBoostClassifier(n_estimators=46,learning_rate=1,random_state=3)
         print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
         clf.fit(self.train_data, self.train_labels)
         print("Returning classifier: " + self.CLASSIFIER_TYPE)
         return clf
-
-
-    def get_results(self):
-        fitted_clf = self.__initialize_pipeline()
-        print("Predicting labels with: " + self.CLASSIFIER_TYPE)
-        pred = fitted_clf.predict(self.test_data)
-        print("Getting Classification Report for: " + self.CLASSIFIER_TYPE + "\n")
-        print(metrics.classification_report(pred, self.test_labels))
 
 
 
@@ -258,18 +256,15 @@ class MYMLPClassifier():
         self.CLASSIFIER_TYPE = "MLP Neural Network"
 
 
-    def initialize_pipeline(self):
+    def initialize_classifier(self):
         print("Creating classifier: " + self.CLASSIFIER_TYPE)
         mlp = OneVsRestClassifier(MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, alpha=1e-4,
                             solver='sgd', random_state=1,
                             learning_rate_init=.1))
         print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
         mlp.fit(self.train_data, self.train_labels)
-        print("Predicting labels with: " + self.CLASSIFIER_TYPE)
-        pred = mlp.predict(self.test_data)
-        print("Getting Classification Report for: " + self.CLASSIFIER_TYPE + "\n")
-        print(metrics.classification_report(pred, self.test_labels))
 
+        return mlp
 
 
 
