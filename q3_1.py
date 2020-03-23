@@ -129,11 +129,11 @@ def main():
 
     print(knn.l2_distance(test_data[0]))
     # Example usage:
-    predicted_label = knn.query_knn(test_data[0], 1)
-    print(predicted_label)
+    #predicted_label = knn.query_knn(test_data[0], 1)
+    #print(predicted_label)
 
     print(classification_accuracy(knn, 2, test_data, test_labels))
-    print(cross_validation(train_data,train_labels))
+    #print(cross_validation(train_data,train_labels))
 
 
 
