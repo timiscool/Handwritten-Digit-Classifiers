@@ -99,9 +99,9 @@ def cross_validation(train_data, train_labels, k_range=np.arange(1,16)):
 
     plt.plot(y[:], avg[:])
 
-    plt.xlabel("K")
-    plt.ylabel("accuracy")
-    plt.title("accuracy vs K")
+    plt.xlabel("Number of Neighbors Neighbors (k)")
+    plt.ylabel("Accuracy")
+    plt.title("KNN Neighbors vs Accuracy")
 
     plt.show()
 
