@@ -35,9 +35,16 @@ def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
     all_data = Data(train_data, train_labels, test_data, test_labels)
 
+    svc = SVMClassifier(all_data)
+    svc.plot_roc_curve()
 
-    mlp = MYMLPClassifier(all_data)
-    mlp.plot_roc_curve()
+
+    #mlp = MYMLPClassifier(all_data)
+    #mlp.plot_roc_curve()
+
+    #ada = MyAdaBoostClassifier(all_data)
+    #ada.plot_roc_curve()
+
 
     #ada = MyAdaBoostClassifier(all_data)
     #ada.plot_roc_curve()
@@ -93,18 +100,23 @@ class SVMClassifier(object):
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
 
-        #steps = [('scaler', StandardScaler()), ('SVM', SVC(kernel='poly'))]
-        #pipeline = Pipeline(steps)  # define Pipeline object
-        #parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
-        #print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
-        #grid = GridSearchCV(pipeline, param_grid=parameters, cv=5)
-        #print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
-        #grid.fit(self.train_data, self.train_labels)
+        steps = [('scaler', StandardScaler()), ('SVM', SVC(kernel='poly'))]
+        pipeline = Pipeline(steps)  # define Pipeline object
+        parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01], 'SVM__kernel' : ['poly', 'linear', 'rbf']}
+        print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
+        grid = GridSearchCV(pipeline, param_grid=parameters, cv=5)
+        print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
+        grid.fit(self.train_data, self.train_labels)
+
 
         # Learn to predict each class against the other
-        classifier = OneVsRestClassifier(SVC(kernel='linear', probability=True,
-                                                 random_state=1))
-        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
+        classifier = OneVsRestClassifier(grid)
+        print("Here\n")
+        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
+        pred = grid.predict(self.test_data)
+        print(metrics.classification_report(pred, self.test_labels))
+        print("Best Parameters are: " + str(grid.best_params_) + "\n")
+
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()
@@ -197,10 +209,28 @@ class MyAdaBoostClassifier:
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
 
+        #parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
+        #              'max_iter': [1000]}
+
+        parameters = {'n_estimators': [46,50,35,65], 'learning_rate': [1,2,5,10], 'random_state': [3]}
+
+        mlp = AdaBoostClassifier()
+
+        # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
+        print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
+        grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
+        print("Fitting Grid: " + self.CLASSIFIER_TYPE)
+        grid.fit(self.train_data, self.train_labels)
+
         # Learn to predict each class against the other
-        classifier = OneVsRestClassifier(SVC(kernel='linear', probability=True,
-                                             random_state=1))
-        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
+        classifier = OneVsRestClassifier(grid)
+        print("Here\n")
+        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
+        pred = grid.predict(self.test_data)
+        print(metrics.classification_report(pred, self.test_labels))
+        print("Best Parameters are: " + str(grid.best_params_) + "\n")
+
+
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()
@@ -293,14 +323,18 @@ class MYMLPClassifier():
         #parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
         grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
-        print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
-        #grid.fit(self.train_data, self.train_labels)
+        print("Fitting Grid: " + self.CLASSIFIER_TYPE)
+        grid.fit(self.train_data, self.train_labels)
 
 
         # Learn to predict each class against the other
         classifier = OneVsRestClassifier(grid)
+        print("Here\n")
         y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
-        print("Best Parameters are: " + str(grid.best_params_))
+        pred = grid.predict(self.test_data)
+        print(metrics.classification_report(pred, self.test_labels))
+        #print("Best Parameters are: " + str(grid.best_params_) + "\n")
+
 
 
         # Compute ROC curve and ROC area for each class
