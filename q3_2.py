@@ -40,11 +40,11 @@ def main():
     #svc.plot_roc_curve()
 
 
-    mlp = MYMLPClassifier(all_data)
-    mlp.plot_roc_curve()
+    #mlp = MYMLPClassifier(all_data)
+    #mlp.plot_roc_curve()
 
-    #ada = MyAdaBoostClassifier(all_data)
-    ##ada.plot_roc_curve()
+    ada = MyAdaBoostClassifier(all_data)
+    ada.plot_roc_curve()
 
 
     #ada = MyAdaBoostClassifier(all_data)
@@ -215,8 +215,7 @@ class MyAdaBoostClassifier:
         #parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
         #              'max_iter': [1000]}
 
-        parameters = {'n_estimators': [46,50,35,65], 'learning_rate': [1,2,5,10], 'random_state': [3]}
-
+        parameters = {'learning_rate': [1], 'n_estimators': [44,45,46,47], 'random_state': [3]}
         mlp = AdaBoostClassifier()
 
         # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
@@ -226,16 +225,14 @@ class MyAdaBoostClassifier:
         grid.fit(self.train_data, self.train_labels)
 
         # Learn to predict each class against the other
-        classifier = OneVsRestClassifier(mlp)
+        classifier = OneVsRestClassifier(grid)
         print("Here\n")
-        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
-        pred = classifier.predict(self.test_data)
-        #print(metrics.classification_report(pred, self.test_labels))
+        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
+        pred = grid.predict(self.test_data)
+        # print(metrics.classification_report(pred, self.test_labels))
         print(metrics.classification_report(self.test_labels, pred))
         print(confusion_matrix(self.test_labels, pred))
         print("Best Parameters are: " + str(grid.best_params_) + "\n")
-
-
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()
