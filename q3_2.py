@@ -36,8 +36,16 @@ def main():
     all_data = Data(train_data, train_labels, test_data, test_labels)
 
 
-    svm = MYMLPClassifier(all_data)
-    svm.plot_roc_curve()
+    mlp = MYMLPClassifier(all_data)
+    mlp.plot_roc_curve()
+
+    #ada = MyAdaBoostClassifier(all_data)
+    #ada.plot_roc_curve()
+
+    #svm = SVMClassifier(all_data)
+    #svm.plot_roc_curve()
+
+
     #plot_roc(svm.initialize_classifier(), "SVM")
     #metrics = Metrics(all_data)
     #metrics.plot_roc(svm.initialize_classifier(), "SVM")
@@ -84,6 +92,14 @@ class SVMClassifier(object):
 
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
+
+        #steps = [('scaler', StandardScaler()), ('SVM', SVC(kernel='poly'))]
+        #pipeline = Pipeline(steps)  # define Pipeline object
+        #parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
+        #print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
+        #grid = GridSearchCV(pipeline, param_grid=parameters, cv=5)
+        #print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
+        #grid.fit(self.train_data, self.train_labels)
 
         # Learn to predict each class against the other
         classifier = OneVsRestClassifier(SVC(kernel='linear', probability=True,
@@ -174,7 +190,7 @@ class MyAdaBoostClassifier:
 
     def plot_roc_curve(self):
 
-        y=label_binarize(self.train_labels, classes = [0,1,2,3,4,5,6,7,8,9])
+        y = label_binarize(self.train_labels, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         n_classes = y.shape[1]
 
@@ -182,9 +198,8 @@ class MyAdaBoostClassifier:
                                                             random_state=0)
 
         # Learn to predict each class against the other
-
-        classifier = OneVsRestClassifier(AdaBoostClassifier(n_estimators=46,learning_rate=1,random_state=3))
-
+        classifier = OneVsRestClassifier(SVC(kernel='linear', probability=True,
+                                             random_state=1))
         y_score = classifier.fit(X_train, y_train).decision_function(X_test)
 
         # Compute ROC curve and ROC area for each class
@@ -199,10 +214,7 @@ class MyAdaBoostClassifier:
         fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
         roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
-
-
         lw = 2
-
 
         # First aggregate all false positive rates
         all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
@@ -231,7 +243,7 @@ class MyAdaBoostClassifier:
                        ''.format(roc_auc["macro"]),
                  color='navy', linestyle=':', linewidth=4)
 
-        colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+        colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'green', 'red', 'black', 'indigo', 'lime', 'gray'])
         for i, color in zip(range(n_classes), colors):
             plt.plot(fpr[i], tpr[i], color=color, lw=lw,
                      label='ROC curve of class {0} (area = {1:0.2f})'
@@ -242,7 +254,7 @@ class MyAdaBoostClassifier:
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('Some extension of Receiver operating characteristic to multi-class')
+        plt.title('Receiver Operating Characteristic Curve for {}'.format(self.CLASSIFIER_TYPE))
         plt.legend(loc="lower right")
         plt.show()
 
@@ -259,9 +271,9 @@ class MYMLPClassifier():
 
     def initialize_classifier(self):
         print("Creating classifier: " + self.CLASSIFIER_TYPE)
-        mlp = OneVsRestClassifier(MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, alpha=1e-4,
+        mlp = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, alpha=1e-4,
                             solver='sgd', random_state=1,
-                            learning_rate_init=.1))
+                            learning_rate_init=.1)
         print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
         mlp.fit(self.train_data, self.train_labels)
 
@@ -275,9 +287,21 @@ class MYMLPClassifier():
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
 
+        parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes' : [(50,), (100,)], 'random_state' : [3], 'max_iter' : [1000]}
+        mlp = MLPClassifier()
+
+        #parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
+        print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
+        grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
+        print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
+        #grid.fit(self.train_data, self.train_labels)
+
+
         # Learn to predict each class against the other
-        classifier = self.initialize_classifier()
-        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
+        classifier = OneVsRestClassifier(grid)
+        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
+        print("Best Parameters are: " + str(grid.best_params_))
+
 
         # Compute ROC curve and ROC area for each class
         fpr = dict()
