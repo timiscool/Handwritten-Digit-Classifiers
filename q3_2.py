@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import cycle
 import scipy
+from sklearn.metrics import confusion_matrix
 
 from sklearn.model_selection import train_test_split
 
@@ -35,15 +36,15 @@ def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
     all_data = Data(train_data, train_labels, test_data, test_labels)
 
-    svc = SVMClassifier(all_data)
-    svc.plot_roc_curve()
+    #svc = SVMClassifier(all_data)
+    #svc.plot_roc_curve()
 
 
-    #mlp = MYMLPClassifier(all_data)
-    #mlp.plot_roc_curve()
+    mlp = MYMLPClassifier(all_data)
+    mlp.plot_roc_curve()
 
     #ada = MyAdaBoostClassifier(all_data)
-    #ada.plot_roc_curve()
+    ##ada.plot_roc_curve()
 
 
     #ada = MyAdaBoostClassifier(all_data)
@@ -102,7 +103,7 @@ class SVMClassifier(object):
 
         steps = [('scaler', StandardScaler()), ('SVM', SVC(kernel='poly'))]
         pipeline = Pipeline(steps)  # define Pipeline object
-        parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01], 'SVM__kernel' : ['poly', 'linear', 'rbf']}
+        parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
         grid = GridSearchCV(pipeline, param_grid=parameters, cv=5)
         print("Fitting Classifier: " + self.CLASSIFIER_TYPE)
@@ -112,9 +113,11 @@ class SVMClassifier(object):
         # Learn to predict each class against the other
         classifier = OneVsRestClassifier(grid)
         print("Here\n")
-        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
+        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
         pred = grid.predict(self.test_data)
-        print(metrics.classification_report(pred, self.test_labels))
+        #print(metrics.classification_report(pred, self.test_labels))
+        print(metrics.classification_report(self.test_labels, pred))
+        print(confusion_matrix(self.test_labels, pred))
         print("Best Parameters are: " + str(grid.best_params_) + "\n")
 
 
@@ -223,11 +226,13 @@ class MyAdaBoostClassifier:
         grid.fit(self.train_data, self.train_labels)
 
         # Learn to predict each class against the other
-        classifier = OneVsRestClassifier(grid)
+        classifier = OneVsRestClassifier(mlp)
         print("Here\n")
-        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
-        pred = grid.predict(self.test_data)
-        print(metrics.classification_report(pred, self.test_labels))
+        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
+        pred = classifier.predict(self.test_data)
+        #print(metrics.classification_report(pred, self.test_labels))
+        print(metrics.classification_report(self.test_labels, pred))
+        print(confusion_matrix(self.test_labels, pred))
         print("Best Parameters are: " + str(grid.best_params_) + "\n")
 
 
@@ -317,7 +322,7 @@ class MYMLPClassifier():
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
 
-        parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes' : [(50,), (100,)], 'random_state' : [3], 'max_iter' : [1000]}
+        parameters = { 'solver' : ['adam'],'hidden_layer_sizes' : [(100,)], 'random_state' : [3], 'max_iter' : [1000]}
         mlp = MLPClassifier()
 
         #parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
@@ -332,8 +337,10 @@ class MYMLPClassifier():
         print("Here\n")
         y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
         pred = grid.predict(self.test_data)
-        print(metrics.classification_report(pred, self.test_labels))
-        #print("Best Parameters are: " + str(grid.best_params_) + "\n")
+        #print(metrics.classification_report(pred, self.test_labels))
+        print(metrics.classification_report(self.test_labels, pred))
+        print(confusion_matrix(self.test_labels, pred))
+        print("Best Parameters are: " + str(grid.best_params_) + "\n")
 
 
 
@@ -501,76 +508,6 @@ class Data:
 
 
 
-def plot_roc(clf, type):
-
-    y = label_binarize(train_labels, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
-    n_classes = y.shape[1]
-
-    X_train, X_test, y_train, y_test = train_test_split(train_data, y, test_size=.36,
-                                                        random_state=0)
-
-    # Learn to predict each class against the other
-
-    classifier = OneVsRestClassifier(clf)
-
-    y_score = classifier.fit(X_train, y_train).decision_function(X_test)
-
-    # Compute ROC curve and ROC area for each class
-    fpr = dict()
-    tpr = dict()
-    roc_auc = dict()
-    for i in range(n_classes):
-        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
-        roc_auc[i] = auc(fpr[i], tpr[i])
-
-    # Compute micro-average ROC curve and ROC area
-    fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
-    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-    lw = 2
-
-    # First aggregate all false positive rates
-    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
-
-    # Then interpolate all ROC curves at this points
-    mean_tpr = np.zeros_like(all_fpr)
-    for i in range(n_classes):
-        mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
-
-    # Finally average it and compute AUC
-    mean_tpr /= n_classes
-
-    fpr["macro"] = all_fpr
-    tpr["macro"] = mean_tpr
-    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
-
-    # Plot all ROC curves
-    plt.figure()
-    plt.plot(fpr["micro"], tpr["micro"],
-             label='micro-average ROC curve (area = {0:0.2f})'
-                   ''.format(roc_auc["micro"]),
-             color='deeppink', linestyle=':', linewidth=4)
-
-    plt.plot(fpr["macro"], tpr["macro"],
-             label='macro-average ROC curve (area = {0:0.2f})'
-                   ''.format(roc_auc["macro"]),
-             color='navy', linestyle=':', linewidth=4)
-
-    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-    for i, color in zip(range(n_classes), colors):
-        plt.plot(fpr[i], tpr[i], color=color, lw=lw,
-                 label='ROC curve of class {0} (area = {1:0.2f})'
-                       ''.format(i, roc_auc[i]))
-
-    plt.plot([0, 1], [0, 1], 'k--', lw=lw)
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic Curve for {}'.format(type))
-    plt.legend(loc="lower right")
-    plt.show()
 
 if __name__ == '__main__':
 
