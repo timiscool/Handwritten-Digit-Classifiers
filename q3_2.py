@@ -16,7 +16,7 @@ import numpy as np
 from itertools import cycle
 import scipy
 from sklearn.metrics import confusion_matrix
-
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 
 
@@ -188,7 +188,7 @@ class MyAdaBoostClassifier:
         self.train_labels = data.train_labels
         self.test_data = data.test_data
         self.test_labels = data.test_labels
-        self.CLASSIFIER_TYPE = "AdaBoost"
+        self.CLASSIFIER_TYPE = "KNeighbors"
 
 
     def initialize_classifier(self):
@@ -215,13 +215,13 @@ class MyAdaBoostClassifier:
         #parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
         #              'max_iter': [1000]}
 
-        parameters = {'learning_rate': [1], 'n_estimators': [44,45,46,47], 'random_state': [3]}
-        mlp = AdaBoostClassifier()
+        parameters = {'n_neighbors': [1]}
+        mlp = KNeighborsClassifier()
 
         # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
         grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
-        print("Fitting Grid: " + self.CLASSIFIER_TYPE)
+        print("Fitting Grid: " + "KNeighbors")
         grid.fit(self.train_data, self.train_labels)
 
         # Learn to predict each class against the other
