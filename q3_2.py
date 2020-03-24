@@ -5,16 +5,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import label_binarize
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import cycle
-import scipy
 from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
@@ -31,10 +28,6 @@ train_data, train_labels, test_data, test_labels = data.load_all_data('data')
 def main():
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
     all_data = Data(train_data, train_labels, test_data, test_labels)
-
-    # svc = SVMClassifier(all_data)
-    # svc.plot_roc_curve()
-
 
     mlp = MYMLPClassifier(all_data)
     svm = SVMClassifier(all_data)
@@ -90,7 +83,7 @@ class MyAdaBoostClassifier:
         self.train_labels = data.train_labels
         self.test_data = data.test_data
         self.test_labels = data.test_labels
-        self.CLASSIFIER_TYPE = "KNeighbors"
+        self.CLASSIFIER_TYPE = "AdaBoost"
 
     def initialize_classifier(self):
         y = label_binarize(self.train_labels, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -103,13 +96,16 @@ class MyAdaBoostClassifier:
         # parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
         #              'max_iter': [1000]}
 
-        parameters = {'n_neighbors': [1]}
-        mlp = KNeighborsClassifier()
+        parameters = {'learning_rate': [1], 'n_estimators' : [45], 'random_state' :[3]}
+
+        ada = AdaBoostClassifier()
 
         # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
+
+
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
-        grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
-        print("Fitting Grid: " + "KNeighbors")
+        grid = GridSearchCV(ada, param_grid=parameters, cv=5)
+        print("Fitting Grid: " + self.CLASSIFIER_TYPE)
         grid.fit(self.train_data, self.train_labels)
 
         # Learn to predict each class against the other
@@ -156,6 +152,49 @@ class MYMLPClassifier():
 
         return grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes,self.CLASSIFIER_TYPE
 
+
+
+class KNN():
+
+    def __init__(self, data):
+        self.train_data = data.train_data
+        self.train_labels = data.train_labels
+        self.test_data = data.test_data
+        self.test_labels = data.test_labels
+        self.CLASSIFIER_TYPE = "KNearest Neighbors"
+
+    def initialize_classifier(self):
+        y = label_binarize(self.train_labels, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+        n_classes = y.shape[1]
+
+        X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
+                                                            random_state=0)
+
+        # parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
+        #              'max_iter': [1000]}
+
+        parameters = {'n_neighbors': [1]}
+        mlp = KNeighborsClassifier()
+
+        # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
+        print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
+        grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
+        print("Fitting Grid: " + "KNeighbors")
+        grid.fit(self.train_data, self.train_labels)
+
+        # Learn to predict each class against the other
+        classifier = OneVsRestClassifier(grid)
+        print("Here\n")
+        y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
+        pred = grid.predict(self.test_data)
+
+
+        return grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes,self.CLASSIFIER_TYPE
+
+
+
+
 class Metrics:
 
     def __init__(self, data):
@@ -163,8 +202,6 @@ class Metrics:
         self.train_labels = data.train_labels
         self.test_data = data.test_data
         self.test_labels = data.test_labels
-
-
 
     def plot_roc_curve(self,grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes,type):
 
