@@ -26,22 +26,39 @@ train_data, train_labels, test_data, test_labels = data.load_all_data('data')
 
 
 def main():
+
+    # get data, and store it to be passed around
     train_data, train_labels, test_data, test_labels = data.load_all_data('data')
     all_data = Data(train_data, train_labels, test_data, test_labels)
 
+    #get all my classifiers
     mlp = MYMLPClassifier(all_data)
     svm = SVMClassifier(all_data)
     ada = MyAdaBoostClassifier(all_data)
+    knn = KNN(all_data)
+
+    #load class to determine metrics
     metrics = Metrics(all_data)
 
+
+
+
+    #initialize and determine metrics for AdaBoost
     grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type = ada.initialize_classifier()
     metrics.plot_roc_curve(grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type)
 
+    #initialize and determine metrics for MLP Neural Network
     grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type = mlp.initialize_classifier()
     metrics.plot_roc_curve(grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type)
 
+    #initialize and determine metrics for Support Vector Machine
     grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type = svm.initialize_classifier()
     metrics.plot_roc_curve(grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type)
+
+    #initialize and determine metrics for K Nearest Neighbor
+    grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type = knn.initialize_classifier()
+    metrics.plot_roc_curve(grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes, type)
+
 
 
 
@@ -62,7 +79,12 @@ class SVMClassifier(object):
                                                             random_state=0)
 
         steps = [('scaler', StandardScaler()), ('SVM', SVC(kernel='poly'))]
-        pipeline = Pipeline(steps)  # define Pipeline object
+        pipeline = Pipeline(steps)
+
+        # parameters used to tune this are below, I removed them from the grid for computation time
+        # in the event that an instructor/TA runs my code.
+
+        # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
         grid = GridSearchCV(pipeline, param_grid=parameters, cv=5)
@@ -87,20 +109,14 @@ class MyAdaBoostClassifier:
 
     def initialize_classifier(self):
         y = label_binarize(self.train_labels, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
         n_classes = y.shape[1]
 
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
 
-        # parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
-        #              'max_iter': [1000]}
 
         parameters = {'learning_rate': [1], 'n_estimators' : [45], 'random_state' :[3]}
-
         ada = AdaBoostClassifier()
-
-        # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
 
 
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
@@ -110,7 +126,6 @@ class MyAdaBoostClassifier:
 
         # Learn to predict each class against the other
         classifier = OneVsRestClassifier(grid)
-        print("Here\n")
         y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
         pred = grid.predict(self.test_data)
 
@@ -131,14 +146,18 @@ class MYMLPClassifier():
         y = label_binarize(self.train_labels, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         n_classes = y.shape[1]
-
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
+
+        # parameters used to tune this are below, I removed them from the grid for computation time
+        # in the event that an instructor/TA runs my code.
+
+        # parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
+        #              'max_iter': [1000]}
 
         parameters = {'solver': ['adam'], 'hidden_layer_sizes': [(100,)], 'random_state': [3], 'max_iter': [1000]}
         mlp = MLPClassifier()
 
-        # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
         grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
         print("Fitting Grid: " + self.CLASSIFIER_TYPE)
@@ -146,7 +165,6 @@ class MYMLPClassifier():
 
         # Learn to predict each class against the other
         classifier = OneVsRestClassifier(grid)
-        print("Here\n")
         y_score = classifier.fit(X_train, y_train).predict_proba(X_test)
         pred = grid.predict(self.test_data)
 
@@ -171,15 +189,12 @@ class KNN():
         X_train, X_test, y_train, y_test = train_test_split(self.train_data, y, test_size=.36,
                                                             random_state=0)
 
-        # parameters = {'solver': ['lbfgs', 'sgd', 'adam'], 'hidden_layer_sizes': [(50,), (100,)], 'random_state': [3],
-        #              'max_iter': [1000]}
 
         parameters = {'n_neighbors': [1]}
-        mlp = KNeighborsClassifier()
+        k = KNeighborsClassifier()
 
-        # parameters = {'SVM__C': [0.001, 0.1, 100, 10e5], 'SVM__gamma': [10, 1, 0.1, 0.01]}
         print("Grid searching for best parameters on: " + self.CLASSIFIER_TYPE)
-        grid = GridSearchCV(mlp, param_grid=parameters, cv=5)
+        grid = GridSearchCV(k, param_grid=parameters, cv=5)
         print("Fitting Grid: " + "KNeighbors")
         grid.fit(self.train_data, self.train_labels)
 
