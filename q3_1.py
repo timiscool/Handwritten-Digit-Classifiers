@@ -9,6 +9,7 @@ import numpy as np
 # Import pyplot - plt.imshow is useful!
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
+from collections import Counter
 
 
 class KNearestNeighbor(object):
@@ -47,18 +48,27 @@ class KNearestNeighbor(object):
         '''
 
 
-        distances = self.l2_distance(test_point)
-
-        kIndicies = np.argpartition(distances, k)[:k]
-        labels = self.train_labels[kIndicies]
-        (value, count) = np.unique(labels, return_counts=True)
-        ind = np.argmax(count)
-        digit = value[ind]
 
 
+        distances = self.l2_distance(test_point) # get distances
+        sorted_index = np.argpartition(distances, k)[:k] # get indencies of distances
 
 
+        labels = self.train_labels[sorted_index] # get the labels, based on indencies
+        (label, count) = np.unique(labels, return_counts=True) # get the
+
+
+        c = Counter(labels)
+
+        label, count = c.most_common()[0]
+        digit = label
         return digit
+
+
+
+
+
+        #return value[np.argmax(count)]
 
 def cross_validation(train_data, train_labels, k_range=np.arange(1,16)):
     '''
@@ -111,7 +121,8 @@ def classification_accuracy(knn, k, eval_data, eval_labels):
 
     for x in range(size):
 
-        if not (knn.query_knn(eval_data[x, :], k ) == eval_labels[x]):
+
+        if not (knn.query_knn(eval_data[x, :], k) == eval_labels[x]):
             continue
 
         correct += 1
@@ -127,13 +138,16 @@ def main():
     knn = KNearestNeighbor(train_data, train_labels)
 
 
-    print(knn.l2_distance(test_data[0]))
+    #print(knn.l2_distance(test_data[0]))
     # Example usage:
     #predicted_label = knn.query_knn(test_data[0], 1)
     #print(predicted_label)
 
-    print(classification_accuracy(knn, 2, test_data, test_labels))
-    #print(cross_validation(train_data,train_labels))
+    print("Accuracy of k = 1 :" + str(classification_accuracy(knn, 1, test_data, test_labels)))
+
+    print("Accuracy of k = 15 :" + str(classification_accuracy(knn, 15, test_data, test_labels)))
+
+    print(cross_validation(train_data,train_labels))
 
 
 
