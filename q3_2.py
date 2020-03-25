@@ -15,6 +15,7 @@ from itertools import cycle
 from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 # confusion matrix is basic, not as good as ROC, sensitivity
 
@@ -220,7 +221,7 @@ class Metrics:
 
     def plot_roc_curve(self,grid, X_train, X_test, y_train, y_test, y_score, pred, n_classes,type):
 
-        # print(metrics.classification_report(pred, self.test_labels))
+        print("Accuracy score: " + str(accuracy_score(self.test_labels, pred)))
         print(metrics.classification_report(self.test_labels, pred))
         print(confusion_matrix(self.test_labels, pred))
         print("Best Parameters are: " + str(grid.best_params_) + "\n")

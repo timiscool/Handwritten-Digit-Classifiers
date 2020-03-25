@@ -54,21 +54,24 @@ class KNearestNeighbor(object):
         sorted_index = np.argpartition(distances, k)[:k] # get indencies of distances
 
 
-        labels = self.train_labels[sorted_index] # get the labels, based on indencies
-        (label, count) = np.unique(labels, return_counts=True) # get the
+        labels = self.train_labels[sorted_index]
+        (label, count) = np.unique(labels, return_counts=True)
 
-
-        c = Counter(labels)
-
-        label, count = c.most_common()[0]
-        digit = label
-        return digit
+        if (len(count) >= 2):
 
 
 
+            c = Counter(labels)
+
+            label, count = c.most_common()[0]
 
 
-        #return value[np.argmax(count)]
+        return label
+
+
+
+
+
 
 def cross_validation(train_data, train_labels, k_range=np.arange(1,16)):
     '''
@@ -143,12 +146,20 @@ def main():
     #predicted_label = knn.query_knn(test_data[0], 1)
     #print(predicted_label)
 
-    print("Accuracy of k = 1 :" + str(classification_accuracy(knn, 1, test_data, test_labels)))
+    print("Accuracy of k = 1: " + str(classification_accuracy(knn, 1, test_data, test_labels)))
 
-    print("Accuracy of k = 15 :" + str(classification_accuracy(knn, 15, test_data, test_labels)))
+    print("Accuracy of k = 15: " + str(classification_accuracy(knn, 15, test_data, test_labels)))
 
-    print(cross_validation(train_data,train_labels))
 
+
+
+
+    accs = cross_validation(train_data,train_labels)
+    print("Accuracies: " + str(accs))
+
+    avg_accs = sum(accs) / 15
+
+    print("Average Accuracy: " + str(avg_accs))
 
 
 if __name__ == '__main__':
